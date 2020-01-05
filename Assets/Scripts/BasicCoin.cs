@@ -18,6 +18,11 @@ public class BasicCoin : MonoBehaviour
     public GameObject saisenBox;
     public CoinState state=CoinState.Run;
 
+    [SerializeField]
+    public GameObject scoreText;
+
+    [SerializeField]
+    public AudioClip sound1;
     virtual public void SetParam(float spd, float dir)
     {
         speed = spd;
@@ -39,6 +44,11 @@ public class BasicCoin : MonoBehaviour
     {
         return finished;
     }
+    virtual protected void Reflect()
+    {
+        direction *= -1;
+
+    }
     void OnCollisionEnter(Collision collision)
     {
         if (state == CoinState.Run)
@@ -49,21 +59,31 @@ public class BasicCoin : MonoBehaviour
             }
             else if (collision.gameObject.CompareTag("Wall"))
             {
-                direction *= -1;
+                Reflect();
             }
             else if (collision.gameObject.CompareTag("SaisenHead"))
-            {                
+            {
+                GameObject scoreTextObj = Instantiate(scoreText);
+                scoreTextObj.transform.position = saisenBox.GetComponent<Rigidbody>().position;
+                float fscale = 0.5f * Mathf.Log10(value) + 1;
+                scoreTextObj.GetComponent<ScoreText>().SetScore("+" + value.ToString(), fscale);
+
                 state = CoinState.Got;
                 GetComponent<Collider>().isTrigger = true;
                 rigidBody.useGravity = true;
                 rigidBody.MovePosition(new Vector3(-20, -20, 0));
-                //rigidBody.AddForce(new Vector3(0f, 5f, -10.0f), ForceMode.Impulse);
+                GetComponent<AudioSource>().PlayOneShot(sound1);
             }
             else
             {
                 SetCrashed();
                 Vector3 vector = (collision.gameObject.transform.position - transform.position);
                 rigidBody.AddForce(-10f*vector.normalized, ForceMode.Impulse);
+
+                GameObject scoreTextObj = Instantiate(scoreText);
+                scoreTextObj.transform.position = GetComponent<Rigidbody>().position;
+                float fscale = 0.5f;
+                scoreText.GetComponent<ScoreText>().SetScore("miss!", fscale);
             }
         }
     }
